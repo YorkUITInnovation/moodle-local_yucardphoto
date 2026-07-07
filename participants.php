@@ -39,6 +39,9 @@ $search   = optional_param('search', '', PARAM_TEXT);
 $sort     = optional_param('sort', 'lastname', PARAM_ALPHA);
 $page     = optional_param('page', 0, PARAM_INT);
 $perpage  = optional_param('perpage', 20, PARAM_INT);
+$sifirst  = optional_param('sifirst', null, PARAM_NOTAGS);
+$silast   = optional_param('silast', null, PARAM_NOTAGS);
+$nophotoonly = optional_param('nophotoonly', 0, PARAM_BOOL);
 
 // Sanitise sort column to a known safe value.
 $allowedsorts = ['lastname', 'firstname', 'email', 'sisid', 'nophoto'];
@@ -70,6 +73,26 @@ if (local_yucardphoto_is_globally_disabled()) {
 
 if (!local_yucardphoto_is_enabled_for_course($courseid)) {
     throw new \moodle_exception('nopermissions', 'error', '', get_string('photoview', 'local_yucardphoto'));
+}
+
+// Persist name-initial filters per course context, matching Moodle grader report behaviour.
+if (isset($sifirst)) {
+    $SESSION->local_yucardphoto["filterfirstname-{$context->id}"] = $sifirst;
+}
+if (isset($silast)) {
+    $SESSION->local_yucardphoto["filtersurname-{$context->id}"] = $silast;
+}
+
+$firstnameinitial = $SESSION->local_yucardphoto["filterfirstname-{$context->id}"] ?? '';
+$lastnameinitial  = $SESSION->local_yucardphoto["filtersurname-{$context->id}"] ?? '';
+
+$firstnameinitial = core_text::strtoupper(trim((string)$firstnameinitial));
+$lastnameinitial  = core_text::strtoupper(trim((string)$lastnameinitial));
+if ($firstnameinitial !== '' && !preg_match('/^[A-Z]$/', $firstnameinitial)) {
+    $firstnameinitial = '';
+}
+if ($lastnameinitial !== '' && !preg_match('/^[A-Z]$/', $lastnameinitial)) {
+    $lastnameinitial = '';
 }
 
 // -------------------------------------------------------------------------
@@ -140,12 +163,38 @@ foreach ($enrolledusers as $user) {
 // Search filter
 // -------------------------------------------------------------------------
 $searchterm = trim(core_text::strtolower($search));
-if ($searchterm !== '') {
-    $students = array_filter($students, function($s) use ($searchterm) {
-        return strpos(core_text::strtolower($s->firstname), $searchterm) !== false
-            || strpos(core_text::strtolower($s->lastname),  $searchterm) !== false
-            || strpos(core_text::strtolower($s->sisid),     $searchterm) !== false;
+if ($searchterm !== '' || $firstnameinitial !== '' || $lastnameinitial !== '') {
+    $students = array_filter($students, function($s) use ($searchterm, $firstnameinitial, $lastnameinitial) {
+        $firstname = (string)($s->firstname ?? '');
+        $lastname  = (string)($s->lastname ?? '');
+        $sisid     = (string)($s->sisid ?? '');
+
+        $searchmatches = true;
+        if ($searchterm !== '') {
+            $searchmatches = strpos(core_text::strtolower($firstname), $searchterm) !== false
+                || strpos(core_text::strtolower($lastname), $searchterm) !== false
+                || strpos(core_text::strtolower($sisid), $searchterm) !== false;
+        }
+
+        $firstmatches = true;
+        if ($firstnameinitial !== '') {
+            $firstmatches = $firstname !== ''
+                && core_text::strtoupper(core_text::substr($firstname, 0, 1)) === $firstnameinitial;
+        }
+
+        $lastmatches = true;
+        if ($lastnameinitial !== '') {
+            $lastmatches = $lastname !== ''
+                && core_text::strtoupper(core_text::substr($lastname, 0, 1)) === $lastnameinitial;
+        }
+
+        return $searchmatches && $firstmatches && $lastmatches;
     });
+}
+
+// Optional mode: show only students missing a photo.
+if ($nophotoonly) {
+    $students = array_filter($students, fn($s) => !$s->hasphoto);
 }
 
 // -------------------------------------------------------------------------
@@ -175,7 +224,15 @@ $nophotocount = count(array_filter($students, fn($s) => !$s->hasphoto));
 $students     = array_slice(array_values($students), $page * $perpage, $perpage);
 
 $paging = new paging_bar($totalcount, $page, $perpage, new moodle_url($pageurl,
-    ['search' => $search, 'sort' => $sort, 'perpage' => $perpage, 'id' => $courseid]));
+    [
+        'search' => $search,
+        'sort' => $sort,
+        'perpage' => $perpage,
+        'sifirst' => $firstnameinitial,
+        'silast' => $lastnameinitial,
+        'nophotoonly' => $nophotoonly,
+        'id' => $courseid,
+    ]));
 
 // -------------------------------------------------------------------------
 // Render — build template context then delegate to Mustache
@@ -184,24 +241,21 @@ $paging = new paging_bar($totalcount, $page, $perpage, new moodle_url($pageurl,
 // Default photo placeholder (Moodle's standard user silhouette).
 $defaultphoto = $OUTPUT->image_url('u/f1')->out(false);
 
-// ---- Sort dropdown options — first entry is the placeholder ---------------
-$sortdefinitions = [
-    'lastname'  => get_string('sortbylastname',  'local_yucardphoto'),
-    'firstname' => get_string('sortbyfirstname', 'local_yucardphoto'),
-    'email'     => get_string('sortbyemail',     'local_yucardphoto'),
-    'sisid'     => get_string('sortbysisid',     'local_yucardphoto'),
-];
-$sortoptions = [];
-// Prepend the disabled placeholder shown when nothing custom is selected.
-$sortoptions[] = [
-    'value'       => '',
-    'label'       => get_string('sortby', 'local_yucardphoto'),
-    'selected'    => ($sort === 'lastname'), // default — show placeholder when on default sort
-    'placeholder' => true,
-];
-foreach ($sortdefinitions as $value => $label) {
-    $sortoptions[] = ['value' => $value, 'label' => $label, 'selected' => ($value === $sort), 'placeholder' => false];
-}
+$initialselector = new \core_course\output\actionbar\initials_selector(
+    course: $course,
+    targeturl: '/local/yucardphoto/participants.php',
+    firstinitial: $firstnameinitial,
+    lastinitial: $lastnameinitial,
+    additionalparams: [
+        'id' => $courseid,
+        'search' => $search,
+        'sort' => $sort,
+        'perpage' => $perpage,
+        'nophotoonly' => $nophotoonly,
+        'page' => 0,
+    ],
+);
+$initialselectorhtml = $OUTPUT->render($initialselector);
 
 // ---- Show-all / show-paged link -----------------------------------------
 // These links preserve the current sort but always clear search — they control
@@ -214,15 +268,21 @@ $showallurl   = (new moodle_url($pageurl, [
     'id'      => $courseid,
     'search'  => $search,   // preserve current search
     'sort'    => $sort,
+    'sifirst' => $firstnameinitial,
+    'silast'  => $lastnameinitial,
+    'nophotoonly' => $nophotoonly,
     'perpage' => $isshowingall ? 20 : 100,
     'page'    => 0,
 ]))->out(false);
 
-// ---- No-photo sort link (replaces dropdown option) ----------------------
+// ---- Missing-photo filter link -------------------------------------------
 $nophotourl = (new moodle_url($pageurl, [
     'id'      => $courseid,
-    'search'  => '',
-    'sort'    => 'nophoto',
+    'search'  => $search,
+    'sort'    => $sort,
+    'sifirst' => $firstnameinitial,
+    'silast'  => $lastnameinitial,
+    'nophotoonly' => $nophotoonly ? 0 : 1,
     'perpage' => $perpage,
     'page'    => 0,
 ]))->out(false);
@@ -233,8 +293,26 @@ $clearsearchurl = ($searchterm !== '') ? (new moodle_url($pageurl, [
     'id'      => $courseid,
     'search'  => '',
     'sort'    => $sort,
+    'sifirst' => $firstnameinitial,
+    'silast'  => $lastnameinitial,
+    'nophotoonly' => $nophotoonly,
     'perpage' => $perpage,
     'page'    => 0,
+]))->out(false) : '';
+
+// ---- Clear filter URL ---------------------------------------------------
+// Shown when a first/last name initial filter is active so the user can
+// reset it back to 'All' without clearing the current search term.
+$isfiltering   = ($firstnameinitial !== '' || $lastnameinitial !== '');
+$clearfilterurl = $isfiltering ? (new moodle_url($pageurl, [
+    'id'         => $courseid,
+    'search'     => $search,
+    'sort'       => $sort,
+    'sifirst'    => '',
+    'silast'     => '',
+    'nophotoonly' => $nophotoonly,
+    'perpage'    => $perpage,
+    'page'       => 0,
 ]))->out(false) : '';
 
 
@@ -276,12 +354,29 @@ $templatecontext = [
     'searchvalue'       => s($search),
     'searchlabel'       => get_string('search', 'local_yucardphoto'),
     'searchplaceholder' => get_string('searchplaceholder', 'local_yucardphoto'),
-    'sortoptions'       => $sortoptions,
+    'sifirst'           => $firstnameinitial,
+    'silast'            => $lastnameinitial,
+    'nophotoonly'       => $nophotoonly,
+    'sortvalue'         => $sort,
+    'perpagevalue'      => $perpage,
+    'initialselector'   => $initialselectorhtml,
+    'enlargephotolabel' => get_string('enlargephoto', 'local_yucardphoto'),
+    'closemodal'        => get_string('close', 'core'),
     'countlabel'        => get_string('studentcount', 'local_yucardphoto', $totalcount),
     'issearching'       => ($searchterm !== ''),
     'clearsearchurl'    => $clearsearchurl,
-    'hasnophoto'        => ($nophotocount > 0),
-    'nophotolabel'      => get_string('nophotocount', 'local_yucardphoto', $nophotocount),
+    'isfiltering'       => $isfiltering,
+    'clearfilterurl'    => $clearfilterurl,
+    'hasnophoto'        => ($nophotocount > 0) || (bool)$nophotoonly,
+    'nophotofilteractive' => (bool)$nophotoonly,
+    'nophotolabel'      => $nophotoonly
+        ? get_string('showallstudents', 'local_yucardphoto')
+        : get_string('nophotocount', 'local_yucardphoto', $nophotocount),
+    'nophototitle'      => $nophotoonly
+        ? get_string('showallstudents', 'local_yucardphoto')
+        : get_string('showmissingonly', 'local_yucardphoto'),
+    'nophotobadgetitle' => get_string('nophotobadgetitle', 'local_yucardphoto'),
+    'nophotobadgetext'  => get_string('nophotobadgetext', 'local_yucardphoto'),
     'nophotourl'        => $nophotourl,
     'showallurl'        => $showallurl,
     'showalllabel'      => $showalllabel,
@@ -290,6 +385,7 @@ $templatecontext = [
     'students'          => $studentrows,
     'noresultsmsg'      => $noresultsmsg,
     'pagingbar'         => $pagingbarhtml,
+    'pageinfohtml'      => format_text(get_string('pageinfo', 'local_yucardphoto'), FORMAT_MARKDOWN),
 ];
 
 // ---- Output -------------------------------------------------------------

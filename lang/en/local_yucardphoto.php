@@ -31,21 +31,21 @@ $string['pluginname'] = 'YU Card Photo Roster';
 $string['task_import_yucard_photos'] = 'Import YU Card photos from external database';
 
 // Course setting.
-$string['coursesettings_heading']         = 'Photograph Roster';
-$string['coursesettings_heading_desc']    = 'Controls whether the Photo View roster button is shown on the Participants page for this course.';
-$string['enable_photo_view']              = 'Enable Photo View roster';
-$string['enable_photo_view_desc']         = 'When enabled, authorised roles (instructors, managers, etc.) will see a "Photo View" button on the Participants page that opens the YU Card photo roster for this course.';
+$string['coursesettings_heading']         = 'Photo Roster';
+$string['coursesettings_heading_desc']    = 'Controls whether the Photo Roster button is shown on the Participants page for this course.';
+$string['enable_photo_view']              = 'Enable Photo Roster';
+$string['enable_photo_view_desc']         = 'When enabled, authorised roles (instructors, managers, etc.) will see a "Photo Roster" button on the Participants page that opens the YU Card Photo Roster for this course.';
 $string['enable_photo_view_yes']          = 'Yes';
 $string['enable_photo_view_no']           = 'No';
-$string['enable_photo_view_help']        = 'Yes - Show photo view button, No - Hide photo view button.';
+$string['enable_photo_view_help']        = 'Yes - Show Photo Roster button, No - Hide Photo Roster button.';
 
 // Participants page.
-$string['photoview']           = 'Photograph Roster';
-$string['photoviewtitle']      = 'Photograph Roster - {$a}';
-$string['viewphoto']           = 'View Photo';
-$string['backtoparticipants'] = 'Participants';
+$string['photoview']           = 'Photo Roster';
+$string['photoviewtitle']      = 'Photo Roster - {$a}';
+$string['viewphoto']           = 'Photo Roster';
+$string['backtoparticipants'] = 'Participants List';
 $string['search']             = 'Search';
-$string['searchplaceholder']  = 'Search…';
+$string['searchplaceholder']  = 'Search users or Student ID';
 $string['sortby']             = 'Sort by';
 $string['sortbyfirstname']    = 'First name';
 $string['sortbylastname']     = 'Last name';
@@ -61,10 +61,15 @@ $string['sisid']              = 'Student ID';
 $string['email']              = 'Email';
 $string['studentcount']       = '{$a} student(s) found';
 $string['nophotocount']       = '{$a} student(s) missing a photo';
+$string['showmissingonly']    = 'Show only students missing photos';
+$string['showallstudents']    = 'Show all students';
+$string['enlargephoto']       = 'View larger photo';
+$string['nophotobadgetitle']  = 'No photo on file';
+$string['nophotobadgetext']   = 'No photo';
 $string['showall']            = 'Show all {$a}';
 $string['showpaged']          = 'Show 20 per page';
 $string['students']           = 'Students';
-$string['pageinfo']           = 'This page shows the photo roster for enrolled students in this course. Use the search box to find students by first name, last name, or student ID. Use the Sort by dropdown to change the order. Students without a photo on file are highlighted - click the warning badge to view them first.';
+$string['pageinfo']           = "This page displays official York University (YU-Card) photos for students enrolled in this course.\n\n- These photos come from York's official YU-Card source.\n- They may differ from user-selected profile photos in eClass.\n- This view is visible only to instructors and non-editing instructors.";
 
 // Upload page.
 $string['uploadphoto']        = 'Upload Student Photo';
@@ -85,8 +90,8 @@ $string['noneselected']       = 'No student selected yet - search above and clic
 
 // Admin settings.
 $string['settings_heading']        = 'YU Card Photo Import Settings — Oracle';
-$string['disable_photo_view_globally'] = 'Disable Photo View globally';
-$string['disable_photo_view_globally_desc'] = 'When enabled, the Photo View button is hidden for all courses and direct access to the Photo Roster page is blocked, even if a course has Photo View enabled.';
+$string['disable_photo_view_globally'] = 'Disable Photo Roster globally';
+$string['disable_photo_view_globally_desc'] = 'When enabled, the Photo Roster button is hidden for all courses and direct access to the Photo Roster page is blocked, even if a course has Photo Roster enabled.';
 $string['yucard_db_type']          = 'External DB type';
 $string['yucard_db_type_desc']     = 'Database driver to use when connecting to the external YU Card system. Select Oracle (OCI8) for the York YU Card database.';
 $string['yucard_db_tns']           = 'Oracle TNS connect string';

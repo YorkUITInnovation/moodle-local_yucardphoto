@@ -89,7 +89,7 @@
 }}
 
 {{! ── Moodle-style page header: icon + title (left), course breadcrumb (right) ── }}
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
     <div class="d-flex align-items-center gap-2">
         <span class="ycp-page-icon" aria-hidden="true">
             {{#pix}} photo-camera, local_yucardphoto {{/pix}}
@@ -110,18 +110,18 @@
 </div>
 
 {{! ── Back to Participants button — commented out; breadcrumb handles navigation ── }}
-<!--<div class="ycp-page-header mb-3">-->
-<!--    <a href="{{backurl}}" class="btn btn-outline-secondary">-->
-<!--        {{#pix}} t/left, core {{/pix}}-->
-<!--        {{backlabel}}-->
-<!--    </a>-->
-<!--</div> }}-->
+<div class="ycp-page-header mb-3">
+    <a href="{{backurl}}" class="btn btn-outline-secondary">
+        {{#pix}} t/left, core {{/pix}}
+        {{backlabel}}
+    </a>
+</div>
 
 {{! ── Page summary alert ─────────────────────────────────────────────────── }}
 <div class="alert alert-info d-flex align-items-start gap-2 mt-4" role="note">
     <span aria-hidden="true">&#8505;</span>
     <span>
-        {{#str}} pageinfo, local_yucardphoto {{/str}}
+        {{{pageinfohtml}}}
     </span>
 </div>
 
@@ -130,52 +130,49 @@
     <h3 class="mb-3 border-bottom pb-2">{{#str}} students, local_yucardphoto {{/str}}</h3>
 
     {{! ── Controls bar ────────────────────────────────────────────────── }}
-    <form method="get" action="{{formaction}}" class="mb-2"
-          data-region="ycp-controls">
-        <input type="hidden" name="id" value="{{courseid}}">
+    {{! Search form and initials selector are sibling elements — the initials selector
+        renders its own <form> internally (initialsdropdownform), so it must NOT be
+        nested inside the search <form>. Nested forms are invalid HTML and cause the
+        initials JS navigation to submit the outer form instead of redirecting. }}
+    <div class="d-flex align-items-center gap-2 w-100 mb-2" data-region="ycp-controls">
 
-        <div class="d-flex align-items-center gap-2 w-100">
-
-            {{! Search — input left, magnifying glass button appended right as submit }}
-            <div class="mt-2 ycp-search-wrapper">
-                <div class="input-group" role="search">
-                    <input type="search"
-                           id="ycp-search"
-                           name="search"
-                           value="{{searchvalue}}"
-                           placeholder="{{searchplaceholder}}"
-                           class="form-control"
-                           autocomplete="off"
-                           aria-label="{{searchlabel}}"
-                           aria-describedby="ycp-search-btn">
-                    <button class="btn btn-outline-secondary"
-                            id="ycp-search-btn"
-                            type="submit"
-                            aria-label="{{searchlabel}}">
-                        {{#pix}} a/search, core {{/pix}}
-                    </button>
-                </div>
+        {{! Search form (only wraps the search input + submit button) }}
+        <form method="get" action="{{formaction}}" class="mt-2 ycp-search-wrapper">
+            <input type="hidden" name="id" value="{{courseid}}">
+            <input type="hidden" name="sort" value="{{sortvalue}}">
+            <input type="hidden" name="perpage" value="{{perpagevalue}}">
+            <input type="hidden" name="sifirst" value="{{sifirst}}">
+            <input type="hidden" name="silast" value="{{silast}}">
+            <input type="hidden" name="nophotoonly" value="{{nophotoonly}}">
+            <input type="hidden" name="page" value="0">
+            <div class="input-group" role="search">
+                <input type="search"
+                       id="ycp-search"
+                       name="search"
+                       value="{{searchvalue}}"
+                       placeholder="{{searchplaceholder}}"
+                       class="form-control"
+                       autocomplete="off"
+                       aria-label="{{searchlabel}}"
+                       aria-describedby="ycp-search-btn">
+                <button class="btn btn-outline-secondary"
+                        id="ycp-search-btn"
+                        type="submit"
+                        aria-label="{{searchlabel}}">
+                    {{#pix}} a/search, core {{/pix}}
+                </button>
             </div>
+        </form>
 
-            {{! Sort by — default form-select size, hugs right }}
-            <div class="mt-2 ms-auto flex-shrink-0">
-                <label for="ycp-sort" class="visually-hidden">{{#str}} sortby, local_yucardphoto {{/str}}</label>
-                <select id="ycp-sort" name="sort" class="form-select">
-                    {{#sortoptions}}
-                        {{#placeholder}}
-                        <option value="" disabled{{^selected}} selected{{/selected}}>{{label}}</option>
-                        {{/placeholder}}
-                        {{^placeholder}}
-                        <option value="{{value}}"{{#selected}} selected{{/selected}}>{{label}}</option>
-                        {{/placeholder}}
-                    {{/sortoptions}}
-                </select>
-            </div>
-
+        {{! Filter by name initials — Moodle core initials selector popup.
+            Must be a sibling of the search form, NOT inside it. }}
+        <div class="mt-2 ms-auto flex-shrink-0">
+            {{{initialselector}}}
         </div>
-    </form>
 
-    {{! ── Result count + clear search + missing photo badge ────────────── }}
+    </div>
+
+    {{! ── Result count + clear search + clear filter + missing photo badge ── }}
     <div class="d-flex flex-wrap align-items-center gap-3 mt-2 mb-4">
         <span class="text-muted small">{{countlabel}}</span>
         {{#issearching}}
@@ -183,10 +180,15 @@
             {{#pix}} e/cancel, core {{/pix}} {{#str}} clearsearch, core {{/str}}
         </a>
         {{/issearching}}
+        {{#isfiltering}}
+        <a href="{{clearfilterurl}}" class="small text-decoration-none">
+            {{#pix}} e/cancel, core {{/pix}} {{#str}} clearfilters, core {{/str}}
+        </a>
+        {{/isfiltering}}
         {{#hasnophoto}}
         <a href="{{nophotourl}}"
-           class="badge bg-warning text-dark text-decoration-none"
-           title="Sort by missing photos">
+           class="badge text-decoration-none {{#nophotofilteractive}}bg-secondary text-white{{/nophotofilteractive}}{{^nophotofilteractive}}bg-warning text-dark{{/nophotofilteractive}}"
+           title="{{nophototitle}}">
             &#9888; {{nophotolabel}}
         </a>
         {{/hasnophoto}}
@@ -203,15 +205,25 @@
 
                 {{! Photo }}
                 <div class="card-img-top d-flex justify-content-center align-items-center pt-3 position-relative">
-                    <img src="{{photourl}}"
-                         alt="{{alttext}}"
-                         width="100"
-                         height="100"
-                         class="rounded-circle ycp-photo{{#nophoto}} ycp-photo-missing{{/nophoto}}"
-                         style="object-fit: cover;">
+                    <button type="button"
+                            class="btn p-0 border-0 bg-transparent"
+                            data-action="ycp-enlarge-photo"
+                            data-bs-toggle="modal"
+                            data-bs-target="#ycp-photo-modal"
+                            data-photo-src="{{photourl}}"
+                            data-photo-alt="{{alttext}}"
+                            data-photo-name="{{lastname}}, {{firstname}}"
+                            aria-label="{{enlargephotolabel}}">
+                        <img src="{{photourl}}"
+                             alt="{{alttext}}"
+                             width="100"
+                             height="100"
+                             class="rounded-circle ycp-photo{{#nophoto}} ycp-photo-missing{{/nophoto}}"
+                             style="object-fit: cover;">
+                    </button>
                     {{#nophoto}}
                     <span class="badge bg-warning text-dark position-absolute bottom-0 ycp-missing-badge"
-                          title="No photo on file">&#9888; No photo</span>
+                          title="{{nophotobadgetitle}}">&#9888; {{nophotobadgetext}}</span>
                     {{/nophoto}}
                 </div>
 
@@ -251,3 +263,22 @@
     {{/hasstudents}}
 
 </div>{{! end .ycp-students-section }}
+
+{{! ── Photo enlargement modal ───────────────────────────────────────────── }}
+<div class="modal fade" id="ycp-photo-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" data-region="ycp-modal-title"></h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{closemodal}}"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img src=""
+                     alt=""
+                     class="img-fluid rounded"
+                     data-region="ycp-modal-image">
+            </div>
+        </div>
+    </div>
+</div>
+

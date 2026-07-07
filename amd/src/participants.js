@@ -16,11 +16,10 @@
 /**
  * AMD module: interactive controls for the YU Card Photo Roster page.
  *
- * - Sort-by dropdown submits the form immediately on change.
- * - Search input submits automatically after the user pauses typing (debounce).
- * - Enter key submits immediately.
- * - X clear button clears the search field and submits.
- * - The explicit Submit button is hidden via JS (progressive enhancement).
+ * Name-initial filtering is handled by Moodle core's initials selector
+ * component (`core_course/actionbar/initials`).
+ *
+ * This module binds click-to-enlarge behavior for roster photos.
  *
  * Note on DB usage: the PHP page fetches enrolled users + photo records once
  * per page load using two queries (get_enrolled_users + one IN query). All
@@ -37,22 +36,35 @@
  * Initialise the participants page controls.
  *
  * @param {Object} config
- * @param {number} config.debounce  Unused — kept for API compatibility.
+ * @param {number} config.debounce Unused, kept for API compatibility.
  */
 export const init = (config) => {
     const cfg = Object.assign({debounce: 600}, config || {});
-    // Debounce retained for API compatibility but no longer used.
+    // Retained for API compatibility.
     void cfg;
 
-    const form = document.querySelector('[data-region="ycp-controls"]');
-    if (!form) {
+    const modal = document.getElementById('ycp-photo-modal');
+    if (!modal) {
         return;
     }
 
-    const sortSelect = document.getElementById('ycp-sort');
+    const modalImage = modal.querySelector('[data-region="ycp-modal-image"]');
+    const modalTitle = modal.querySelector('[data-region="ycp-modal-title"]');
+    const triggers = document.querySelectorAll('[data-action="ycp-enlarge-photo"]');
 
-    // ── Sort dropdown: submit immediately on change ───────────────────────
-    if (sortSelect) {
-        sortSelect.addEventListener('change', () => form.submit());
-    }
+    triggers.forEach((trigger) => {
+        trigger.addEventListener('click', () => {
+            if (!modalImage || !modalTitle) {
+                return;
+            }
+
+            const src = trigger.getAttribute('data-photo-src') || '';
+            const alt = trigger.getAttribute('data-photo-alt') || '';
+            const name = trigger.getAttribute('data-photo-name') || '';
+
+            modalImage.setAttribute('src', src);
+            modalImage.setAttribute('alt', alt);
+            modalTitle.textContent = name;
+        });
+    });
 };
