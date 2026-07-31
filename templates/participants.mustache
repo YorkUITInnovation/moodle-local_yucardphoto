@@ -110,9 +110,8 @@
 </div>
 
 {{! ── Back to Participants button — commented out; breadcrumb handles navigation ── }}
-<div class="ycp-page-header mb-3">
-    <a href="{{backurl}}" class="btn btn-outline-secondary">
-        {{#pix}} t/left, core {{/pix}}
+<div class="ycp-page-header mb-3 d-flex justify-content-end">
+    <a href="{{backurl}}" class="btn btn-secondary">
         {{backlabel}}
     </a>
 </div>
@@ -134,7 +133,7 @@
         renders its own <form> internally (initialsdropdownform), so it must NOT be
         nested inside the search <form>. Nested forms are invalid HTML and cause the
         initials JS navigation to submit the outer form instead of redirecting. }}
-    <div class="d-flex align-items-center gap-2 w-100 mb-2" data-region="ycp-controls">
+    <div class="d-flex align-items-center gap-2 w-100 mb-2 flex-wrap" data-region="ycp-controls">
 
         {{! Search form (only wraps the search input + submit button) }}
         <form method="get" action="{{formaction}}" class="mt-2 ycp-search-wrapper">
@@ -164,9 +163,11 @@
             </div>
         </form>
 
+        <div class="vr text-secondary opacity-50 mt-2" aria-hidden="true"></div>
+
         {{! Filter by name initials — Moodle core initials selector popup.
             Must be a sibling of the search form, NOT inside it. }}
-        <div class="mt-2 ms-auto flex-shrink-0">
+        <div class="mt-2 flex-shrink-0">
             {{{initialselector}}}
         </div>
 
@@ -281,4 +282,10 @@
         </div>
     </div>
 </div>
+
+
+
+
+
+
 
