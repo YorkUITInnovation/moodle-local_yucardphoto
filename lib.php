@@ -221,3 +221,25 @@ function local_yucardphoto_store_photo(string $sisid, string $imagedata, string 
     $url->param('rev', $storedfile->get_timemodified());
     return $url->out(false);
 }
+
+/**
+ * Check whether a course is a degree course.
+ * Degree courses have a course level of 1-9 in the yorkcourseinfo table.
+ * Non-degree courses (professional development, special topics, etc.) will have no
+ * entry in yorkcourseinfo or a non-numeric level.
+ *
+ * @param  int  $courseid
+ * @return bool True if the course is a degree course, false otherwise.
+ */
+function local_yucardphoto_is_degree_course(int $courseid): bool {
+    global $DB;
+
+    $yorkcourseinfo = $DB->get_record('yorkcourseinfo', ['moodleid' => $courseid]);
+
+    if (!$yorkcourseinfo || empty($yorkcourseinfo->courselevel)) {
+        return false;
+    }
+
+    // Degree courses have courselevel 1-9 (numeric)
+    return preg_match('/^[1-9]$/', $yorkcourseinfo->courselevel) === 1;
+}

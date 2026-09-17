@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2026040601;
+$plugin->version   = 2026091701;
 $plugin->requires  = 2025100600; // Moodle 5.1.
-$plugin->release   = '1.0.1 (Build: 2026040601)';
+$plugin->release   = '1.1.0 (Build: 2026091701)';
 $plugin->component = 'local_yucardphoto';
 $plugin->maturity  = MATURITY_STABLE;

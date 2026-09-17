@@ -32,7 +32,7 @@ $string['task_import_yucard_photos'] = 'Import YU Card photos from external data
 
 // Course setting.
 $string['coursesettings_heading']         = 'Photo Roster';
-$string['coursesettings_heading_desc']    = 'Controls whether the Photo Roster button is shown on the Participants page for this course.';
+$string['coursesettings_heading_desc']    = 'Controls whether the Photo Roster button is shown on the Participants page for this course. <strong>Note:</strong> Photo Roster is only available for degree courses (credit-bearing courses with course levels 1-9). Professional development and non-degree courses cannot use this feature.';
 $string['enable_photo_view']              = 'Enable Photo Roster';
 $string['enable_photo_view_desc']         = 'When enabled, authorised roles (instructors, managers, etc.) will see a "Photo Roster" button on the Participants page that opens the YU Card Photo Roster for this course.';
 $string['enable_photo_view_yes']          = 'Yes';

@@ -92,6 +92,11 @@ class before_http_headers {
             return;
         }
 
+        // Only show for degree courses.
+        if (!\local_yucardphoto_is_degree_course($courseid)) {
+            return;
+        }
+
         // Queue the AMD module — it will append the button once the DOM is ready.
         $photourl = new \moodle_url('/local/yucardphoto/participants.php', ['id' => $courseid]);
 

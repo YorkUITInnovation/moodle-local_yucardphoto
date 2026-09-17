@@ -37,6 +37,8 @@ class after_form_definition {
      * @param \core_course\hook\after_form_definition $hook
      */
     public static function callback(\core_course\hook\after_form_definition $hook): void {
+        global $CFG;
+        
         $mform    = $hook->mform;
         $wrapper  = $hook->formwrapper;
         $course   = $wrapper->get_course();
@@ -44,6 +46,13 @@ class after_form_definition {
         // Only show for existing courses (no sense enabling it before the
         // course exists and has participants).
         if (empty($course->id)) {
+            return;
+        }
+
+        // Only show for degree courses. Professional development and other
+        // non-degree courses are not eligible for Photo View.
+        require_once($CFG->dirroot . '/local/yucardphoto/lib.php');
+        if (!\local_yucardphoto_is_degree_course((int)$course->id)) {
             return;
         }
 

@@ -37,7 +37,7 @@ class after_form_submission {
      * @param \core_course\hook\after_form_submission $hook
      */
     public static function callback(\core_course\hook\after_form_submission $hook): void {
-        global $DB;
+        global $DB, $CFG;
 
         $data     = $hook->get_data();
         $courseid = (int)($data->id ?? 0);
@@ -46,8 +46,14 @@ class after_form_submission {
             return;
         }
 
-        // The field may not be present if the section wasn't shown (new course).
+        // The field may not be present if the section wasn't shown (new course or non-degree course).
         if (!isset($data->yucardphoto_enabled)) {
+            return;
+        }
+
+        // Extra safety: only allow setting for degree courses
+        require_once($CFG->dirroot . '/local/yucardphoto/lib.php');
+        if (!\local_yucardphoto_is_degree_course($courseid)) {
             return;
         }
 
