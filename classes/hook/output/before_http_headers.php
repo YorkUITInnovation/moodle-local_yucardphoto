@@ -37,9 +37,8 @@ class before_http_headers {
     /**
      * Callback invoked by Moodle's hook dispatcher before headers are sent.
      *
-     * Only acts on user/index.php (participants page) when:
-     *  - The course has the Photo View feature enabled.
-     *  - The current user has the viewroster capability in the course context.
+     * Only acts on user/index.php (participants page) when the roster is
+     * available for the course and the current user is allowed to view it.
      *
      * @param \core\hook\output\before_http_headers $hook
      */
@@ -79,21 +78,8 @@ class before_http_headers {
             return;
         }
 
-        if (\local_yucardphoto_is_globally_disabled()) {
-            return;
-        }
-
-        // Check capability and course setting.
-        if (!\local_yucardphoto_can_view_roster($context)) {
-            return;
-        }
-
-        if (!\local_yucardphoto_is_enabled_for_course($courseid)) {
-            return;
-        }
-
-        // Only show for degree courses.
-        if (!\local_yucardphoto_is_degree_course($courseid)) {
+        // Only show the button when the roster is available for this course.
+        if (!\local_yucardphoto_can_show_roster($courseid, $context)) {
             return;
         }
 

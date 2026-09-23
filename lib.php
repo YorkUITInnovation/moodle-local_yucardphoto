@@ -153,6 +153,33 @@ function local_yucardphoto_can_view_roster(context_course $context): bool {
 }
 
 /**
+ * Check whether the Photo View roster should be shown for a course.
+ *
+ * This is the single gate used by the participants-page button injection and
+ * the roster page itself, so the global disable setting cannot be bypassed by
+ * course-level or degree-course checks.
+ *
+ * @param  int             $courseid
+ * @param  context_course  $context
+ * @return bool
+ */
+function local_yucardphoto_can_show_roster(int $courseid, context_course $context): bool {
+    if (local_yucardphoto_is_globally_disabled()) {
+        return false;
+    }
+
+    if (!local_yucardphoto_is_degree_course($courseid)) {
+        return false;
+    }
+
+    if (!local_yucardphoto_is_enabled_for_course($courseid)) {
+        return false;
+    }
+
+    return local_yucardphoto_can_view_roster($context);
+}
+
+/**
  * Store a raw image binary as a Moodle file and return the pluginfile URL.
  *
  * The file is stored in the system context under:
@@ -224,9 +251,20 @@ function local_yucardphoto_store_photo(string $sisid, string $imagedata, string 
 
 /**
  * Check whether a course is a degree course.
- * Degree courses have a course level of 1-9 in the yorkcourseinfo table.
- * Non-degree courses (professional development, special topics, etc.) will have no
- * entry in yorkcourseinfo or a non-numeric level.
+ *
+ * Degree courses are identified by parsing the course idnumber format:
+ * YEAR_FACULTY_DEPARTMENT_PERIOD_LEVEL_...
+ * The course level is the first character of the 5th underscore-delimited token.
+ *
+ * Degree courses have a level of 1-9:
+ *   1-4: Undergraduate
+ *   5-9: Graduate
+ *
+ * Non-degree courses (professional development, special topics, etc.) will have:
+ *   - No idnumber
+ *   - Idnumber with incorrect format
+ *   - Year that is not numeric (not a York course)
+ *   - Level that is not 1-9
  *
  * @param  int  $courseid
  * @return bool True if the course is a degree course, false otherwise.
@@ -234,12 +272,31 @@ function local_yucardphoto_store_photo(string $sisid, string $imagedata, string 
 function local_yucardphoto_is_degree_course(int $courseid): bool {
     global $DB;
 
-    $yorkcourseinfo = $DB->get_record('yorkcourseinfo', ['moodleid' => $courseid]);
+    // Get the course's idnumber
+    $course = $DB->get_record('course', ['id' => $courseid], 'idnumber');
 
-    if (!$yorkcourseinfo || empty($yorkcourseinfo->courselevel)) {
+    if (!$course || empty($course->idnumber)) {
         return false;
     }
 
-    // Degree courses have courselevel 1-9 (numeric)
-    return preg_match('/^[1-9]$/', $yorkcourseinfo->courselevel) === 1;
+    // Parse the idnumber by underscore-delimited tokens
+    // Format: YEAR_FACULTY_DEPARTMENT_PERIOD_LEVELXXXXX_...
+    // We need at least 5 tokens to extract the course level
+    $parts = explode('_', $course->idnumber);
+
+    if (count($parts) < 5) {
+        return false;
+    }
+
+    // Validate that the first token (year) is numeric (4-digit year)
+    // This ensures we only process York academic courses
+    if (!is_numeric($parts[0]) || strlen($parts[0]) !== 4) {
+        return false;
+    }
+
+    // Extract course level: first character of the 5th token (index 4)
+    $courselevel = substr($parts[4], 0, 1);
+
+    // Degree courses have course level 1-9 (numeric)
+    return preg_match('/^[1-9]$/', $courselevel) === 1;
 }

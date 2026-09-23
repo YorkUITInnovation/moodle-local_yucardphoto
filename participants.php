@@ -21,7 +21,7 @@
  * enrolled students for the given course, using photos from the
  * local_yucardphoto table.
  *
- * Access: local/yucardphoto:viewroster capability + course Photo View enabled.
+ * Access: roster available for the course + local/yucardphoto:viewroster capability.
  *
  * @package   local_yucardphoto
  * @copyright 2026 ED&IT, York University
@@ -63,15 +63,7 @@ $context = context_course::instance($courseid);
 
 require_login($course);
 
-if (!local_yucardphoto_can_view_roster($context)) {
-    throw new \moodle_exception('nopermissions', 'error', '', get_string('photoview', 'local_yucardphoto'));
-}
-
-if (local_yucardphoto_is_globally_disabled()) {
-    throw new \moodle_exception('nopermissions', 'error', '', get_string('photoview', 'local_yucardphoto'));
-}
-
-if (!local_yucardphoto_is_enabled_for_course($courseid)) {
+if (!local_yucardphoto_can_show_roster($courseid, $context)) {
     throw new \moodle_exception('nopermissions', 'error', '', get_string('photoview', 'local_yucardphoto'));
 }
 
