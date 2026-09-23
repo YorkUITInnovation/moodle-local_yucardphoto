@@ -56,6 +56,8 @@ class after_form_definition {
             return;
         }
 
+        $isgloballydisabled = \local_yucardphoto_is_globally_disabled();
+
         // Section header.
         $mform->addElement(
             'header',
@@ -83,6 +85,16 @@ class after_form_definition {
         );
         $mform->addHelpButton('yucardphoto_enabled', 'enable_photo_view', 'local_yucardphoto');
         $mform->setType('yucardphoto_enabled', PARAM_INT);
+
+        if ($isgloballydisabled) {
+            $mform->freeze('yucardphoto_enabled');
+            $mform->addElement(
+                'static',
+                'yucardphoto_globally_disabled_notice',
+                '',
+                get_string('enable_photo_view_globally_disabled_notice', 'local_yucardphoto')
+            );
+        }
 
         // Pre-populate with the current saved value.
         global $DB;

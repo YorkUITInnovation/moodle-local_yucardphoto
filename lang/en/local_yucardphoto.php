@@ -38,6 +38,7 @@ $string['enable_photo_view_desc']         = 'When enabled, authorised roles (ins
 $string['enable_photo_view_yes']          = 'Yes';
 $string['enable_photo_view_no']           = 'No';
 $string['enable_photo_view_help']        = 'Yes - Show Photo Roster button, No - Hide Photo Roster button.';
+$string['enable_photo_view_globally_disabled_notice'] = 'Photo Roster is currently disabled site-wide by an administrator. This course-level setting cannot be changed until the global setting is turned off.';
 
 // Participants page.
 $string['photoview']           = 'Photo Roster';
